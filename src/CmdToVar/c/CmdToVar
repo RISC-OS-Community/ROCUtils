@@ -1,0 +1,149 @@
+/*
+ *    Name: CmdToVar
+ * Purpose: Utility to run a RISC OS command and store the output
+ *          in an environment variable for further processing.
+ *  Author: Paolo Fabio Zaino
+ *  Domain: General
+ * License: Copyright by Paolo Fabio Zaino, all rights reserved
+ *          Distributed under CDDL v1.1
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "CLib:swis.h"
+
+void show_syntax(void)
+{
+	fprintf(stdout, "Syntax: *CmdToVar OSVarName *Command\n");
+}
+
+char * run_cmd(char *cmd_line)
+{
+	// Initialise function:
+	int rval = 0;
+	FILE *fp = NULL;
+	char *buffer = NULL;
+	// Determine length of cmd_line:
+	int cmd_len = strlen(cmd_line);
+	// Setup pipe output capturing:
+	char *pipe = " { > pipe::$.CmdToVarOut } \0";
+	int pipe_len = strlen(pipe);
+	// Allocate space for the full command line:
+	char *full_cmd = (char *)calloc(sizeof(char), 5 + cmd_len + pipe_len + 2);
+	// Create the full command line:
+	strcpy(full_cmd, "CALL:");
+	strcat(full_cmd, cmd_line);
+	strcat(full_cmd, pipe);
+	strcat(full_cmd, "\000\000");
+	printf("Command line: %s\n", full_cmd);
+	rval = system( full_cmd );
+	//for (int temp = 0; temp < 100000; temp++)
+		//;
+
+	printf("done\n");
+	system("cat pipe::$");
+	printf("opening pipe\n");
+	printf("rval is: %i\n", rval);
+	system("count pipe::$.CmdToVarOut");
+	if ( rval == 0 || rval == -2 )
+	{
+		fp = fopen("pipe::$.CmdToVarOut", "r");
+		printf("done\n");
+		printf("reading file now\n");
+		if ( fp != NULL )
+		{
+			printf("ok file is not empty\n");
+			if (fseek(fp, 0, SEEK_END) == 0)
+			{
+				// Get  to the  end of the file to determine size:
+				int bufsize = (int)ftell(fp);
+				printf("Buffer size: %i\n", bufsize);
+				if ( bufsize != -1 && bufsize != 0 )
+				{
+					// Allocate buffer:
+					buffer = (char *)calloc(sizeof(char), bufsize + 2);
+					// Go back to the beginning of the file to read it:
+					if (fseek(fp, 0, SEEK_SET) != 0 )
+					{
+						// error
+						rval=-1;
+						fprintf(stderr, "Error processing output!\n");
+						fclose(fp);
+						free(buffer);
+						buffer=NULL;
+						return buffer;
+					 }
+					// Read the entire file and put it in the buffer:
+					size_t newLen = fread(buffer, sizeof(char), bufsize, fp);
+					if ( ferror( fp ) != 0 ) 
+					{
+						// error
+						rval=-1;
+						fprintf(stderr, "Error processing output!\n");
+						fclose(fp);
+						free(buffer);
+						buffer=NULL;
+						return buffer;
+					}
+					strcat(buffer, "\000\000"); // just to be safe!
+					printf("Buffer inside the function is: %s\n", buffer);
+				} else {
+					 // Error (can't reach the end of the file)
+					rval=-1;
+					fprintf(stderr, "Error processing output!\n");
+					fclose(fp);
+					free(buffer);
+					buffer=NULL;
+					return buffer;
+				}
+			}
+			fclose(fp);
+			//int xrval = system("wipe pipe::$.CmdToVarOut");
+		}
+	 }
+	free(full_cmd);
+	full_cmd = NULL;
+	return buffer;
+} 
+
+int main(int argc, char *argv[])
+{
+	int rval = 0;
+
+	if ( argc < 2 )
+	{
+		//fprintf(stderr,  errmsg[1]);
+		show_syntax();
+		return 1;  
+	} else {
+		// Process parameters:
+		char *var_name = argv[1];
+		char *cmd_line = (char *)calloc(sizeof(char), 1024); 
+		for (int i=2; i < argc; i++)
+		{
+			strcat(cmd_line, argv[i]);
+			if ( i < argc - 1 )
+				strcat(cmd_line, " ");
+		}
+		strcat(cmd_line, "\000\000");
+		char *buffer = NULL;
+		buffer = run_cmd(cmd_line);
+		printf("Buffer is: %s\n", buffer);
+		if (buffer != NULL)
+		{
+			int buf_len = strlen(buffer);
+			int var_len = strlen(var_name);
+			char *full_cmd = (char *)calloc(sizeof(char), 4 + var_len + 1 + buf_len +1);
+			strcpy(full_cmd, "Set ");
+			strcpy(full_cmd + 4, var_name);
+			strcpy(full_cmd + 4 + var_len, " ");
+			strcpy(full_cmd + 4 +var_len + 1, buffer);
+			printf("VarSet line: %s\n", full_cmd);
+			rval = system(full_cmd);
+		}
+	}
+	return rval;  
+}
+

@@ -1,0 +1,9 @@
+{
+  "name": "RocUtils",
+  "version": "v1.0.0",
+  "repo": "RISC-OS-Community/ROCUtils",
+  "src": ["CmdToVar.c"],
+  "description": "A collection of command line utilities for the RISC OS Operating System.",
+  "license": "GPL",
+  "keywords": ["command-line", "utility", "utilities", "risc-os", "riscos"]
+}

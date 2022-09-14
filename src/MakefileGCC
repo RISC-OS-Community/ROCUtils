@@ -1,0 +1,12 @@
+# Master Makefile
+
+UTILS:=CmdToVar
+
+.PHONY:all clean $(UTILS)
+all: $(UTILS)
+	dir @.$<
+	make all -f MakefileGCC
+
+clean: $(UTILS)
+	dir @.$<
+	make clean -f MakefileGCC

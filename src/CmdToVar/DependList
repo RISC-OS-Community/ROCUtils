@@ -1,0 +1,3 @@
+o.CmdToVar:	c.CmdToVar
+o.CmdToVar:	CLib:h.swis
+o.CmdToVar:	CLib:h.kernel

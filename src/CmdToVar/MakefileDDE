@@ -1,0 +1,59 @@
+# Use DDE
+CC:=cc
+CXX:=cc -C++
+LD:=link
+
+# Warning flags for C and C++:
+COMMON_FLAGS += -depend DependList
+COMMON_FLAGS += -throwback -Ospace
+
+CFLAGS += ${COMMON_FLAGS}
+CPPFLAGS += ${COMMON_FLAGS}
+
+PROGRAMS_C=	CmdToVar
+EXE_C:=$(patsubst %,@.exe.%,$(PROGRAMS_C))
+OBJ_C:=$(patsubst %,@.o.%,$(PROGRAMS_C))
+#$(info $(EXE_C))
+
+PROGRAMS_CPP=
+ifneq ($(PROGRAMS_CPP),)
+	EXE_CPP:=$(patsubst %,@.%,$(PROGRAMS_CPP))
+	OBJ_CPP:=$(patsubst %,@.o.%,$(PROGRAMS_CPP))
+	#$(info $(EXE_CPP))
+endif
+
+# Uncomment to demo c99 parametric testing.
+CFLAGS += -c99
+
+# Uncomment to enable setjmp()/longjmp().
+#CFLAGS += -DGREATEST_USE_LONGJMP=1
+
+# Uncomment to disable clock() / time.h.
+#CFLAGS += -DGREATEST_USE_TIME=0
+
+
+all: all_c
+
+all_c: o ${PROGRAMS_C}
+
+CmdToVar: CmdToVar.o
+
+o:
+	IfThere @.o Then echo . ELSE cdir o
+
+%.o: o MakefileDDE
+%.o: %.c
+	${CC} -c -o $@ ${CFLAGS} $<
+
+%: %.o
+	${CC} -o $@ ${LDFLAGS} $^
+	IfThere @.$@/exe Then Wipe @.$@/exe ~C F
+	Rename @.$@ @.$@/exe
+
+clean:
+	IfThere @.*/exe Then Wipe @.*/exe ~C F
+	IfThere @.o.* Then Wipe @.o.* ~C F
+	IfThere @.o Then Wipe @.o ~C F
+	IfThere @.DependList Then Wipe @.DependList ~C F
+
+# Dynamic dependencies:
