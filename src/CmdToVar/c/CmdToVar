@@ -14,6 +14,8 @@
 #include <string.h>
 #include "CLib:swis.h"
 
+#define DEBUG
+
 void show_syntax(void)
 {
 	fprintf(stdout, "Syntax: *CmdToVar OSVarName *Command\n");
@@ -25,41 +27,56 @@ char * run_cmd(char *cmd_line)
 	int rval = 0;
 	FILE *fp = NULL;
 	char *buffer = NULL;
+
 	// Determine length of cmd_line:
 	int cmd_len = strlen(cmd_line);
+
 	// Setup pipe output capturing:
 	char *pipe = " { > pipe::$.CmdToVarOut } \0";
 	int pipe_len = strlen(pipe);
+
 	// Allocate space for the full command line:
 	char *full_cmd = (char *)calloc(sizeof(char), 5 + cmd_len + pipe_len + 2);
+
 	// Create the full command line:
 	strcpy(full_cmd, "CALL:");
 	strcat(full_cmd, cmd_line);
 	strcat(full_cmd, pipe);
 	strcat(full_cmd, "\000\000");
-	printf("Command line: %s\n", full_cmd);
+#ifdef DEBUG
+        printf("Command line: %s\n", full_cmd);
+#endif
 	rval = system( full_cmd );
 	//for (int temp = 0; temp < 100000; temp++)
-		//;
+	//;
 
+#ifdef DEBUG
 	printf("done\n");
 	system("cat pipe::$");
 	printf("opening pipe\n");
 	printf("rval is: %i\n", rval);
 	system("count pipe::$.CmdToVarOut");
+ #endif
+
 	if ( rval == 0 || rval == -2 )
 	{
 		fp = fopen("pipe::$.CmdToVarOut", "r");
+#ifdef DEBUG
 		printf("done\n");
 		printf("reading file now\n");
+#endif
 		if ( fp != NULL )
 		{
+#ifdef DEBUG
 			printf("ok file is not empty\n");
+#endif
 			if (fseek(fp, 0, SEEK_END) == 0)
 			{
 				// Get  to the  end of the file to determine size:
-				int bufsize = (int)ftell(fp);
+				 int bufsize = (int)ftell(fp);
+#ifdef DEBUG
 				printf("Buffer size: %i\n", bufsize);
+#endif
 				if ( bufsize != -1 && bufsize != 0 )
 				{
 					// Allocate buffer:
@@ -77,7 +94,7 @@ char * run_cmd(char *cmd_line)
 					 }
 					// Read the entire file and put it in the buffer:
 					size_t newLen = fread(buffer, sizeof(char), bufsize, fp);
-					if ( ferror( fp ) != 0 ) 
+					if ( ferror( fp ) != 0 )
 					{
 						// error
 						rval=-1;
@@ -88,7 +105,9 @@ char * run_cmd(char *cmd_line)
 						return buffer;
 					}
 					strcat(buffer, "\000\000"); // just to be safe!
+#ifdef DEBUG
 					printf("Buffer inside the function is: %s\n", buffer);
+#endif
 				} else {
 					 // Error (can't reach the end of the file)
 					rval=-1;
@@ -106,7 +125,7 @@ char * run_cmd(char *cmd_line)
 	free(full_cmd);
 	full_cmd = NULL;
 	return buffer;
-} 
+}
 
 int main(int argc, char *argv[])
 {
@@ -116,11 +135,11 @@ int main(int argc, char *argv[])
 	{
 		//fprintf(stderr,  errmsg[1]);
 		show_syntax();
-		return 1;  
+		return 1;
 	} else {
 		// Process parameters:
 		char *var_name = argv[1];
-		char *cmd_line = (char *)calloc(sizeof(char), 1024); 
+		char *cmd_line = (char *)calloc(sizeof(char), 1024);
 		for (int i=2; i < argc; i++)
 		{
 			strcat(cmd_line, argv[i]);
@@ -128,6 +147,9 @@ int main(int argc, char *argv[])
 				strcat(cmd_line, " ");
 		}
 		strcat(cmd_line, "\000\000");
+#ifdef DEBUG
+                printf("Passed command line: %s\n", cmd_line);
+#endif
 		char *buffer = NULL;
 		buffer = run_cmd(cmd_line);
 		printf("Buffer is: %s\n", buffer);
@@ -144,6 +166,6 @@ int main(int argc, char *argv[])
 			rval = system(full_cmd);
 		}
 	}
-	return rval;  
+	return rval;
 }
 
