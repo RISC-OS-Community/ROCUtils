@@ -1,3 +1,0 @@
-Set runPath$Dir <Obey$Dir>
-Run <runPath$Dir>.^.ObeyLooper loop1 5 <runPath$Dir>.Loop2
-
