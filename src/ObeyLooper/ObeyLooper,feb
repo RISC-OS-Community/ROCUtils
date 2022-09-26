@@ -1,0 +1,45 @@
+| ObeyFile looper
+| A script to loop through Obey stuff
+| Copyright 2021 by Paolo Fabio Zaino all rights reserved
+| distributed under CDDL v1.1 license
+
+Set %0$Debug 0
+
+| Set Loop-label
+If "<%0$Name>"="" Then Set %0$Name %0
+If "<%0$Debug>"="1" Then Show %0$Name
+
+| Set Loop max iterations
+Set %0$Max %1
+If "<%0$Debug>"="1" Then Show %0$Max
+
+| Set Loop call script within iterations
+Set %0$Call %2
+If "<%0$Debug>"="1" Then Show %0$Call
+
+| Set local path:
+Set %0Path$Path LanMan::sources.$.Tests.BAS.Env.
+If "<%0$Debug>"="1" Then Show %0Path$Path
+
+| Run loop's checks:
+IF "<%0$Loop>"<>"" Then If "<%0$Loop>"="<%0$Max>" Then Set %0$Done 1 Else Set %0$Done 0
+IF "<%0$Done>"="0" Then IF "<%0$loop>"="" Then Set %0$Loop 0
+
+If "<%0$Done>"="0" Then If "<%0$Call>"<>"" Then Run <%0$Call>
+If "<%0$Done>"="0" Then If "<%0$Call>" ="" Then Show %0$Loop
+
+|--- ObeyFile Loop footer:
+If "<%0$Done>"="0" Then SetEval %0$Loop <%0$Loop> + 1
+If "<%0$Debug>"="1" Then Show %0$Loop
+IF "<%0$Done>"="0" Then Run %0Path:ObeyLooper %0 %1 %2
+|---
+
+|--- ObeyFile Loop clean up when done:
+If "<%0$Done>"="1" Then Unset %0$Name
+If "<%0$Done>"="1" Then Unset %0$Call
+IF "<%0$Done>"="1" Then Unset %0$Loop
+If "<%0$Done>"="1" Then Unset %0$Max
+If "<%0$Done>"="1" Then Unset %0Path$Path
+If "<%0$Done>"="1" Then Unset %0$Debug
+If "<%0$Done>"="1" Then Unset %0$Done
+|---

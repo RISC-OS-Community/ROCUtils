@@ -1,0 +1,18 @@
+# Master Makefile
+
+# List space separated all the utility names here:
+UTILS:=CmdToVar
+
+UTILS_FILE:=$(patsubst %,@.%,$(UTILS))
+#$(info $(EXE_C))
+
+$(UTILS):
+	dir @.$@
+
+all: $(UTILS)
+	# dir $<
+	make all -f MakefileDDE
+
+clean: $(UTILS)
+	dir @.$<
+	make clean -f MakefileDDE
